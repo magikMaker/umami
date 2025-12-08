@@ -1,10 +1,21 @@
 import { useConfig } from '@/components/hooks/useConfig';
-import { LINKS_URL, PIXELS_URL } from '@/lib/constants';
+import { LINKS_URL, PIXELS_URL, POSTBACKS_URL } from '@/lib/constants';
 
-export function useSlug(type: 'link' | 'pixel') {
-  const { linksUrl, pixelsUrl } = useConfig();
+export function useSlug(type: 'link' | 'pixel' | 'postback') {
+  const { linksUrl, pixelsUrl, postbacksUrl } = useConfig();
 
-  const hostUrl = type === 'link' ? linksUrl || LINKS_URL : pixelsUrl || PIXELS_URL;
+  const getHostUrl = () => {
+    switch (type) {
+      case 'link':
+        return linksUrl || LINKS_URL;
+      case 'pixel':
+        return pixelsUrl || PIXELS_URL;
+      case 'postback':
+        return postbacksUrl || POSTBACKS_URL;
+    }
+  };
+
+  const hostUrl = getHostUrl();
 
   const getSlugUrl = (slug: string) => {
     return `${hostUrl}/${slug}`;

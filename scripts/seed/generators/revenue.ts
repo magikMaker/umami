@@ -1,4 +1,4 @@
-import { uuid, randomFloat } from '../utils.js';
+import { randomFloat, uuid } from '../utils.js';
 import type { EventData } from './events.js';
 
 export interface RevenueConfig {
@@ -36,7 +36,7 @@ export function generateRevenue(event: EventData, config: RevenueConfig): Revenu
     websiteId: event.websiteId,
     sessionId: event.sessionId,
     eventId: event.id,
-    eventName: event.eventName!,
+    eventName: event.eventName as string,
     currency: config.currency,
     revenue: Math.round(revenue * 100) / 100, // Round to 2 decimal places
     createdAt: event.createdAt,
