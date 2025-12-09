@@ -92,6 +92,7 @@ export const EVENT_TYPE = {
   customEvent: 2,
   linkEvent: 3,
   pixelEvent: 4,
+  postbackEvent: 5,
 } as const;
 
 export const DATA_TYPE = {
@@ -100,6 +101,38 @@ export const DATA_TYPE = {
   boolean: 3,
   date: 4,
   array: 5,
+} as const;
+
+export const POSTBACK_STATUS = {
+  received: 'received',
+  validated: 'validated',
+  failed: 'failed',
+  recorded: 'recorded',
+  relayed: 'relayed',
+  relayFailed: 'relay_failed',
+} as const;
+
+export const POSTBACK_VALIDATION = {
+  none: 'none',
+  checksum: 'checksum',
+  hmac: 'hmac',
+  apiKey: 'apiKey',
+  ipAllowlist: 'ipAllowlist',
+} as const;
+
+export const POSTBACK_FORMAT = {
+  auto: 'auto',
+  json: 'json',
+  xml: 'xml',
+  form: 'form',
+  query: 'query',
+} as const;
+
+export const RELAY_STATUS = {
+  pending: 'pending',
+  success: 'success',
+  failed: 'failed',
+  retrying: 'retrying',
 } as const;
 
 export const OPERATORS = {

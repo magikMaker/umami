@@ -8,21 +8,32 @@ import {
   Label,
   Loading,
   Row,
-  Switch,
+  Select,
   TextField,
 } from '@umami/react-zen';
 import { useEffect, useState } from 'react';
 import { useMessages, usePostbackQuery } from '@/components/hooks';
 import { useUpdateQuery } from '@/components/hooks/queries/useUpdateQuery';
 import { RefreshCw } from '@/components/icons';
+import { WebsiteSelect } from '@/components/input/WebsiteSelect';
 import { POSTBACKS_URL } from '@/lib/constants';
 import { getRandomChars } from '@/lib/generate';
+import { getReceiveTemplates } from '@/lib/postback/templates';
 
 const generateId = () => getRandomChars(12);
 
 /**
+ * Template options for the receive template selector.
+ */
+const receiveTemplates = getReceiveTemplates();
+const templateOptions = [
+  { value: '', label: 'Custom (no template)' },
+  ...receiveTemplates.map(t => ({ value: t.id, label: t.name })),
+];
+
+/**
  * Form for creating or editing a postback endpoint.
- * Includes name, slug generation, and debug mode toggle.
+ * Includes name, slug generation, and receive template selection.
  */
 export function PostbackEditForm({
   postbackId,
@@ -78,7 +89,7 @@ export function PostbackEditForm({
     <Form
       onSubmit={handleSubmit}
       error={getErrorMessage(error)}
-      defaultValues={{ slug, debugEnabled: false, ...data }}
+      defaultValues={{ slug, receiveTemplateId: '', ...data }}
     >
       {({ setValue }) => {
         return (
@@ -94,6 +105,16 @@ export function PostbackEditForm({
             <FormField label={formatMessage(labels.description)} name="description">
               <TextField autoComplete="off" />
             </FormField>
+
+            {!postbackId && (
+              <FormField
+                label={formatMessage(labels.website)}
+                name="websiteId"
+                rules={{ required: formatMessage(labels.required) }}
+              >
+                <WebsiteSelect teamId={teamId} />
+              </FormField>
+            )}
 
             <FormField
               name="slug"
@@ -123,8 +144,8 @@ export function PostbackEditForm({
               </Row>
             </Column>
 
-            <FormField name="debugEnabled">
-              <Switch>{formatMessage(labels.debugMode)}</Switch>
+            <FormField label="Receive Template" name="receiveTemplateId">
+              <Select items={templateOptions} />
             </FormField>
 
             <Row justifyContent="flex-end" paddingTop="3" gap="3">

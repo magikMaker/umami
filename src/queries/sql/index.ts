@@ -10,6 +10,7 @@ export * from './events/getEventStats';
 export * from './events/getEventUsage';
 export * from './events/getWebsiteEvents';
 export * from './events/saveEvent';
+export * from './events/saveRevenue';
 export * from './getActiveVisitors';
 export * from './getChannelExpandedMetrics';
 export * from './getChannelMetrics';

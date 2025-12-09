@@ -1,0 +1,38 @@
+.tabs {
+  display: flex;
+  flex-direction: column;
+}
+
+.tabList {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--base300);
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+.tab {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--base600);
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background: var(--base100);
+  color: var(--base900);
+}
+
+.tab.active {
+  background: var(--base200);
+  color: var(--base900);
+  font-weight: 500;
+}
+
+.content {
+  min-height: 100px;
+}

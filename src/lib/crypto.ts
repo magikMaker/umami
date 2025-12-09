@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { monotonicFactory } from 'ulid';
 import { v4, v5, v7 } from 'uuid';
 
 const ALGORITHM = 'aes-256-gcm';
@@ -62,4 +63,21 @@ export function uuid(...args: any) {
   }
 
   return process.env.USE_UUIDV7 ? v7() : v4();
+}
+
+// Create monotonic ULID generator for guaranteed uniqueness
+const ulidGenerator = monotonicFactory();
+
+/**
+ * Generates a unique ULID (Universally Unique Lexicographically Sortable
+ * Identifier).
+ *
+ * ULIDs are:
+ * - 26 characters, case-insensitive
+ * - Lexicographically sortable (time-based)
+ * - More compact than UUIDs
+ * - URL-safe
+ */
+export function ulid(): string {
+  return ulidGenerator();
 }

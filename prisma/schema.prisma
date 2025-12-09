@@ -21,12 +21,13 @@ model User {
   updatedAt   DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  websites  Website[]  @relation("user")
-  createdBy Website[]  @relation("createUser")
-  links     Link[]     @relation("user")
-  pixels    Pixel[]    @relation("user")
+  websites  Website[]            @relation("user")
+  createdBy Website[]            @relation("createUser")
+  links     Link[]               @relation("user")
+  pixels    Pixel[]              @relation("user")
   teams     TeamUser[]
   reports   Report[]
+  endpoints PostbackEndpoint[]   @relation("endpointUser")
 
   @@map("user")
 }
@@ -76,14 +77,15 @@ model Website {
   updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  user        User?         @relation("user", fields: [userId], references: [id])
-  createUser  User?         @relation("createUser", fields: [createdBy], references: [id])
-  team        Team?         @relation(fields: [teamId], references: [id])
+  user        User?                @relation("user", fields: [userId], references: [id])
+  createUser  User?                @relation("createUser", fields: [createdBy], references: [id])
+  team        Team?                @relation(fields: [teamId], references: [id])
   eventData   EventData[]
   reports     Report[]
   revenue     Revenue[]
   segments    Segment[]
   sessionData SessionData[]
+  endpoints   PostbackEndpoint[]
 
   @@index([userId])
   @@index([teamId])
@@ -195,10 +197,11 @@ model Team {
   updatedAt  DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  websites Website[]
-  members  TeamUser[]
-  links    Link[]
-  pixels   Pixel[]
+  websites  Website[]
+  members   TeamUser[]
+  links     Link[]
+  pixels    Pixel[]
+  endpoints PostbackEndpoint[]
 
   @@index([accessCode])
   @@map("team")
@@ -287,13 +290,21 @@ model Link {
   updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  user User? @relation("user", fields: [userId], references: [id])
-  team Team? @relation(fields: [teamId], references: [id])
+  // Click tracking configuration
+  clickIdParam String? @map("click_id_param") @db.VarChar(50)
+  appendParams Json?   @map("append_params")
+  endpointId   String? @map("endpoint_id") @db.Uuid
+
+  user     User?              @relation("user", fields: [userId], references: [id])
+  team     Team?              @relation(fields: [teamId], references: [id])
+  clicks   LinkClick[]
+  endpoint PostbackEndpoint?  @relation(fields: [endpointId], references: [id])
 
   @@index([slug])
   @@index([userId])
   @@index([teamId])
   @@index([createdAt])
+  @@index([endpointId])
   @@map("link")
 }
 
@@ -315,4 +326,153 @@ model Pixel {
   @@index([teamId])
   @@index([createdAt])
   @@map("pixel")
+}
+
+model LinkClick {
+  id        String  @id @unique @map("id") @db.Uuid
+  linkId    String  @map("link_id") @db.Uuid
+  sessionId String? @map("session_id") @db.Uuid
+  clickId   String  @unique @map("click_id_value") @db.VarChar(26)
+
+  // Captured tracking parameters
+  gclid   String? @db.VarChar(255)
+  fbclid  String? @db.VarChar(255)
+  msclkid String? @db.VarChar(255)
+  ttclid  String? @db.VarChar(255)
+  lifatid String? @map("li_fat_id") @db.VarChar(255)
+  twclid  String? @db.VarChar(255)
+
+  // UTM parameters
+  utmSource   String? @map("utm_source") @db.VarChar(255)
+  utmMedium   String? @map("utm_medium") @db.VarChar(255)
+  utmCampaign String? @map("utm_campaign") @db.VarChar(255)
+  utmContent  String? @map("utm_content") @db.VarChar(255)
+  utmTerm     String? @map("utm_term") @db.VarChar(255)
+
+  // Request context
+  referrer  String? @db.VarChar(500)
+  userAgent String? @map("user_agent") @db.VarChar(500)
+  clientIp  String? @map("client_ip") @db.VarChar(45)
+  country   String? @db.Char(2)
+  region    String? @db.VarChar(50)
+  city      String? @db.VarChar(100)
+
+  // Timestamps
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  convertedAt DateTime? @map("converted_at") @db.Timestamptz(6)
+
+  // Relations
+  link Link @relation(fields: [linkId], references: [id])
+
+  @@index([linkId])
+  @@index([sessionId])
+  @@index([clickId])
+  @@index([createdAt])
+  @@index([gclid])
+  @@index([fbclid])
+  @@map("link_click")
+}
+
+model PostbackEndpoint {
+  id                String    @id @unique @map("endpoint_id") @db.Uuid
+  name              String    @db.VarChar(100)
+  slug              String    @unique @db.VarChar(100)
+  description       String?   @db.VarChar(500)
+  websiteId         String    @map("website_id") @db.Uuid
+  userId            String?   @map("user_id") @db.Uuid
+  teamId            String?   @map("team_id") @db.Uuid
+  receiveTemplateId String?   @map("receive_template_id") @db.VarChar(50)
+  relayTemplateId   String?   @map("relay_template_id") @db.VarChar(50)
+  relayTargetUrl    String?   @map("relay_target_url") @db.VarChar(2000)
+  config            Json      @default("{}")
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  website  Website            @relation(fields: [websiteId], references: [id])
+  user     User?              @relation("endpointUser", fields: [userId], references: [id])
+  team     Team?              @relation(fields: [teamId], references: [id])
+  requests PostbackRequest[]
+  relays   PostbackRelay[]
+  links    Link[]
+
+  @@index([slug])
+  @@index([websiteId])
+  @@index([userId])
+  @@index([teamId])
+  @@index([createdAt])
+  @@map("postback_endpoint")
+}
+
+model PostbackRequest {
+  id            String    @id @unique @map("request_id") @db.Uuid
+  endpointId    String    @map("endpoint_id") @db.Uuid
+  method        String    @db.VarChar(10)
+  path          String    @db.VarChar(500)
+  query         Json?
+  headers       Json?
+  body          Json?
+  bodyRaw       String?   @map("body_raw") @db.Text
+  clientIp      String?   @map("client_ip") @db.VarChar(45)
+  contentType   String?   @map("content_type") @db.VarChar(100)
+  userAgent     String?   @map("user_agent") @db.VarChar(500)
+  parsedFields  Json?     @map("parsed_fields")
+  validation    Json?
+  relayResult   Json?     @map("relay_result")
+  status        String    @default("received") @db.VarChar(20)
+  eventId       String?   @map("event_id") @db.Uuid
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  endpoint PostbackEndpoint @relation(fields: [endpointId], references: [id])
+
+  @@index([endpointId])
+  @@index([createdAt])
+  @@index([endpointId, createdAt])
+  @@index([status])
+  @@map("postback_request")
+}
+
+model PostbackRelay {
+  id           String    @id @unique @map("relay_id") @db.Uuid
+  endpointId   String    @map("endpoint_id") @db.Uuid
+  name         String    @db.VarChar(100)
+  targetUrl    String    @map("target_url") @db.VarChar(2000)
+  method       String    @db.VarChar(10)
+  format       String    @db.VarChar(20)
+  mapping      Json      @default("{}")
+  headers      Json?
+  conditions   Json?
+  retryConfig  Json?     @map("retry_config")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  endpoint PostbackEndpoint @relation(fields: [endpointId], references: [id])
+  logs     PostbackRelayLog[]
+
+  @@index([endpointId])
+  @@index([isActive])
+  @@map("postback_relay")
+}
+
+model PostbackRelayLog {
+  id           String    @id @unique @map("relay_log_id") @db.Uuid
+  relayId      String    @map("relay_id") @db.Uuid
+  requestId    String    @map("request_id") @db.Uuid
+  status       String    @db.VarChar(20)
+  statusCode   Int?      @map("status_code")
+  requestBody  Json?     @map("request_body")
+  responseBody String?   @map("response_body") @db.Text
+  error        String?   @db.Text
+  duration     Int?
+  attempt      Int       @default(1)
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  relay PostbackRelay @relation(fields: [relayId], references: [id])
+
+  @@index([relayId])
+  @@index([requestId])
+  @@index([createdAt])
+  @@map("postback_relay_log")
 }

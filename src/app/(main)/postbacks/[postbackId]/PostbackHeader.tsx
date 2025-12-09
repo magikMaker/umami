@@ -1,4 +1,5 @@
-import { Badge, IconLabel, Row } from '@umami/react-zen';
+import { IconLabel, Row } from '@umami/react-zen';
+import { Badge } from '@/components/common/Badge';
 import { LinkButton } from '@/components/common/LinkButton';
 import { PageHeader } from '@/components/common/PageHeader';
 import { useMessages, usePostback, useSlug } from '@/components/hooks';
