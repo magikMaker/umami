@@ -163,6 +163,7 @@ async function handleRedirect(request: Request, params: { slug: string }): Promi
 
   // Record the click
   await createRedirectClick({
+    id: uuid(),
     redirect: { connect: { id: redirect.id } },
     sessionId,
     clickToken,

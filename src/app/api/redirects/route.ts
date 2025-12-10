@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ulid } from '@/lib/crypto';
+import { uuid } from '@/lib/crypto';
 import { parseRequest } from '@/lib/request';
 import { badRequest, json } from '@/lib/response';
 import {
@@ -61,8 +61,8 @@ export async function POST(request: Request) {
 
   if (error) return error();
 
-  // Generate slug if not provided
-  const slug = body.slug || ulid().toLowerCase();
+  // Generate slug if not provided (use short random string for URL-friendly slugs)
+  const slug = body.slug || uuid().split('-')[0];
 
   // Check slug uniqueness
   const existing = await findRedirectBySlug(slug);
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
   }
 
   const redirect = await createRedirect({
-    id: ulid(),
+    id: uuid(),
     name: body.name,
     slug,
     targetUrl: body.targetUrl,
