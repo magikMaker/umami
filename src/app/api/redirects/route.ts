@@ -1,20 +1,48 @@
 import { z } from 'zod';
 import { uuid } from '@/lib/crypto';
-import { parseRequest } from '@/lib/request';
+import { getQueryFilters, parseRequest } from '@/lib/request';
 import { badRequest, json } from '@/lib/response';
+import { pagingParams, searchParams } from '@/lib/schema';
 import {
   createRedirect,
   findRedirectBySlug,
-  findRedirectsByTeamId,
-  findRedirectsByUserId,
+  getTeamRedirects,
+  getUserRedirects,
 } from '@/queries/prisma';
+
+/**
+ * GET /api/redirects
+ * Lists redirects for the current user or team.
+ */
+export async function GET(request: Request) {
+  const schema = z.object({
+    ...pagingParams,
+    ...searchParams,
+    teamId: z.string().uuid().optional(),
+  });
+
+  const { auth, query, error } = await parseRequest(request, schema);
+
+  if (error) return error();
+
+  const filters = await getQueryFilters(query);
+
+  let redirects;
+  if (query.teamId) {
+    redirects = await getTeamRedirects(query.teamId, filters);
+  } else {
+    redirects = await getUserRedirects(auth.user.id, filters);
+  }
+
+  return json(redirects);
+}
 
 /**
  * Schema for creating a redirect.
  */
 const createSchema = z.object({
   name: z.string().min(1).max(100),
-  slug: z.string().min(6).max(100).optional(),
+  slug: z.string().min(1).max(100).optional(),
   targetUrl: z.string().url().max(2000),
   description: z.string().max(500).optional(),
   websiteId: z.string().uuid(),
@@ -29,28 +57,6 @@ const createSchema = z.object({
     })
     .optional(),
 });
-
-/**
- * GET /api/redirects
- * Lists redirects for the current user or team.
- */
-export async function GET(request: Request) {
-  const { auth, error } = await parseRequest(request);
-
-  if (error) return error();
-
-  const url = new URL(request.url);
-  const teamId = url.searchParams.get('teamId');
-
-  let redirects;
-  if (teamId) {
-    redirects = await findRedirectsByTeamId(teamId);
-  } else {
-    redirects = await findRedirectsByUserId(auth.user.id);
-  }
-
-  return json(redirects);
-}
 
 /**
  * POST /api/redirects

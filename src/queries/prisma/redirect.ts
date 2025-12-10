@@ -4,11 +4,65 @@
  */
 import type { Prisma, Redirect, RedirectClick } from '@/generated/prisma';
 import prisma from '@/lib/prisma';
+import type { QueryFilters } from '@/lib/types';
+
+/**
+ * Gets redirects with pagination and search support.
+ */
+export async function getRedirects(
+  criteria: Prisma.RedirectFindManyArgs,
+  filters: QueryFilters = {},
+) {
+  const { search } = filters;
+  const { getSearchParameters, pagedQuery } = prisma;
+
+  const where: Prisma.RedirectWhereInput = {
+    ...criteria.where,
+    deletedAt: null,
+    ...getSearchParameters(search, [
+      { name: 'contains' },
+      { slug: 'contains' },
+      { targetUrl: 'contains' },
+    ]),
+  };
+
+  return pagedQuery('redirect', { ...criteria, where }, filters);
+}
+
+/**
+ * Gets redirects for a user.
+ */
+export async function getUserRedirects(userId: string, filters?: QueryFilters) {
+  return getRedirects(
+    {
+      where: {
+        userId,
+      },
+      orderBy: { createdAt: 'desc' },
+    },
+    filters,
+  );
+}
+
+/**
+ * Gets redirects for a team.
+ */
+export async function getTeamRedirects(teamId: string, filters?: QueryFilters) {
+  return getRedirects(
+    {
+      where: {
+        teamId,
+      },
+      orderBy: { createdAt: 'desc' },
+    },
+    filters,
+  );
+}
 
 /**
  * Creates a new redirect.
  */
-export async function createRedirect(data: Prisma.RedirectCreateInput): Promise<Redirect> {
+export async function createRedirect(data: Prisma.RedirectUncheckedCreateInput): Promise<Redirect> {
   return prisma.client.redirect.create({ data });
 }
 
@@ -31,34 +85,11 @@ export async function findRedirectBySlug(slug: string): Promise<Redirect | null>
 }
 
 /**
- * Finds redirects by user ID.
+ * Gets a redirect by ID.
  */
-export async function findRedirectsByUserId(
-  userId: string,
-  options?: { includeClicks?: boolean },
-): Promise<Redirect[]> {
-  return prisma.client.redirect.findMany({
-    where: { userId, deletedAt: null },
-    include: options?.includeClicks
-      ? { clicks: { orderBy: { createdAt: 'desc' }, take: 10 } }
-      : undefined,
-    orderBy: { createdAt: 'desc' },
-  });
-}
-
-/**
- * Finds redirects by team ID.
- */
-export async function findRedirectsByTeamId(
-  teamId: string,
-  options?: { includeClicks?: boolean },
-): Promise<Redirect[]> {
-  return prisma.client.redirect.findMany({
-    where: { teamId, deletedAt: null },
-    include: options?.includeClicks
-      ? { clicks: { orderBy: { createdAt: 'desc' }, take: 10 } }
-      : undefined,
-    orderBy: { createdAt: 'desc' },
+export async function getRedirect(redirectId: string): Promise<Redirect | null> {
+  return prisma.client.redirect.findUnique({
+    where: { id: redirectId },
   });
 }
 
@@ -97,7 +128,9 @@ export async function createRedirectClick(
 /**
  * Finds a redirect click by click token.
  */
-export async function findRedirectClickByToken(clickToken: string): Promise<RedirectClick | null> {
+export async function findRedirectClickByToken(
+  clickToken: string,
+): Promise<(RedirectClick & { redirect: Redirect }) | null> {
   return prisma.client.redirectClick.findFirst({
     where: { clickToken },
     include: { redirect: true },
@@ -109,7 +142,7 @@ export async function findRedirectClickByToken(clickToken: string): Promise<Redi
  */
 export async function findRedirectClickByExternalId(
   externalClickId: string,
-): Promise<RedirectClick | null> {
+): Promise<(RedirectClick & { redirect: Redirect }) | null> {
   return prisma.client.redirectClick.findFirst({
     where: { externalClickId },
     include: { redirect: true },
@@ -125,7 +158,7 @@ export async function findRedirectClickByAdNetworkId(params: {
   msclkid?: string;
   ttclid?: string;
   twclid?: string;
-}): Promise<RedirectClick | null> {
+}): Promise<(RedirectClick & { redirect: Redirect }) | null> {
   const { gclid, fbclid, msclkid, ttclid, twclid } = params;
 
   // Build OR conditions for the provided IDs
