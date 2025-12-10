@@ -1,13 +1,17 @@
+import type { ReactQueryOptions } from '@/lib/types';
 import { useApi } from '../useApi';
+import { useModified } from '../useModified';
+import { usePagedQuery } from '../usePagedQuery';
 
-/**
- * Fetches redirects for the current user or team.
- */
-export function useRedirectsQuery(teamId?: string) {
-  const { get, useQuery } = useApi();
+export function useRedirectsQuery({ teamId }: { teamId?: string }, options?: ReactQueryOptions) {
+  const { modified } = useModified('redirects');
+  const { get } = useApi();
 
-  return useQuery({
-    queryKey: ['redirects', teamId],
-    queryFn: () => get('/redirects', teamId ? { teamId } : undefined),
+  return usePagedQuery({
+    queryKey: ['redirects', { teamId, modified }],
+    queryFn: pageParams => {
+      return get(teamId ? `/teams/${teamId}/redirects` : '/redirects', pageParams);
+    },
+    ...options,
   });
 }

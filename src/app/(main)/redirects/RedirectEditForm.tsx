@@ -4,6 +4,7 @@ import {
   Form,
   FormField,
   FormSubmitButton,
+  Loading,
   Row,
   Text,
   TextField,
@@ -19,19 +20,21 @@ import { WebsiteSelect } from '@/components/input/WebsiteSelect';
  */
 export function RedirectEditForm({
   redirectId,
+  teamId,
   onSave,
   onClose,
 }: {
   redirectId?: string;
+  teamId?: string;
   onSave?: () => void;
   onClose?: () => void;
 }) {
   const { formatMessage, labels, messages, getErrorMessage } = useMessages();
-  const { data } = useRedirectQuery(redirectId || '');
+  const { data, isLoading } = useRedirectQuery(redirectId || '');
 
-  const { mutateAsync, error, isPending, toast } = useUpdateQuery(
+  const { mutateAsync, error, isPending, touch, toast } = useUpdateQuery(
     redirectId ? `/redirects/${redirectId}` : '/redirects',
-    { id: redirectId },
+    { id: redirectId, teamId },
   );
 
   const handleSubmit = async (formData: Record<string, unknown>) => {
@@ -56,10 +59,16 @@ export function RedirectEditForm({
     await mutateAsync(submitData, {
       onSuccess: () => {
         toast(formatMessage(messages.saved));
+        touch('redirects');
         onSave?.();
+        onClose?.();
       },
     });
   };
+
+  if (redirectId && isLoading) {
+    return <Loading placement="absolute" />;
+  }
 
   const defaultValues = {
     isActive: true,

@@ -1,21 +1,8 @@
-import { Column, Grid } from '@umami/react-zen';
 import type { Metadata } from 'next';
-import { PageBody } from '@/components/common/PageBody';
-import { RedirectsList } from './RedirectsList';
+import { RedirectsPage } from './RedirectsPage';
 
-/**
- * Redirects page showing all redirect links.
- */
-export default function RedirectsPage() {
-  return (
-    <Grid width="100%" height="100%">
-      <Column margin="2">
-        <PageBody gap>
-          <RedirectsList />
-        </PageBody>
-      </Column>
-    </Grid>
-  );
+export default function () {
+  return <RedirectsPage />;
 }
 
 export const metadata: Metadata = {

@@ -1,58 +1,57 @@
-'use client';
-import { Button, Column, Dialog, DialogTrigger, Icon, Modal, Row, Text } from '@umami/react-zen';
-import { useRouter } from 'next/navigation';
-import { FormattedMessage } from 'react-intl';
-import { useMessages } from '@/components/hooks';
-import { useDeleteQuery } from '@/components/hooks/queries/useDeleteQuery';
+import { ConfirmationForm } from '@/components/common/ConfirmationForm';
+import { useDeleteQuery, useMessages } from '@/components/hooks';
 import { Trash } from '@/components/icons';
+import { DialogButton } from '@/components/input/DialogButton';
+import { messages } from '@/components/messages';
 
-/**
- * Delete button with confirmation dialog for redirects.
- */
-export function RedirectDeleteButton({ redirectId, name }: { redirectId: string; name: string }) {
-  const { formatMessage, labels, messages } = useMessages();
-  const router = useRouter();
+export function RedirectDeleteButton({
+  redirectId,
+  name,
+  onSave,
+}: {
+  redirectId: string;
+  websiteId: string;
+  name: string;
+  onSave?: () => void;
+}) {
+  const { formatMessage, labels, getErrorMessage, FormattedMessage } = useMessages();
+  const { mutateAsync, isPending, error, touch } = useDeleteQuery(`/redirects/${redirectId}`);
 
-  const { mutateAsync, isPending, toast } = useDeleteQuery(`/redirects/${redirectId}`);
-
-  const handleDelete = async (close: () => void) => {
-    await mutateAsync(undefined, {
+  const handleConfirm = async (close: () => void) => {
+    await mutateAsync(null, {
       onSuccess: () => {
-        toast(formatMessage(messages.deleted));
+        touch('redirects');
+        onSave?.();
         close();
-        router.push('/redirects');
       },
     });
   };
 
   return (
-    <DialogTrigger>
-      <Button variant="danger">
-        <Icon>
-          <Trash />
-        </Icon>
-        {formatMessage(labels.delete)}
-      </Button>
-      <Dialog>
-        <Modal title={formatMessage(labels.deleteRedirect)} width="400px">
-          {({ close }) => (
-            <Column gap="4">
-              <Text>
-                <FormattedMessage
-                  {...messages.confirmDelete}
-                  values={{ target: <b key="target">{name}</b> }}
-                />
-              </Text>
-              <Row justifyContent="flex-end" gap="2">
-                <Button onPress={close}>{formatMessage(labels.cancel)}</Button>
-                <Button variant="danger" isDisabled={isPending} onPress={() => handleDelete(close)}>
-                  {formatMessage(labels.delete)}
-                </Button>
-              </Row>
-            </Column>
-          )}
-        </Modal>
-      </Dialog>
-    </DialogTrigger>
+    <DialogButton
+      icon={<Trash />}
+      title={formatMessage(labels.confirm)}
+      variant="quiet"
+      width="400px"
+    >
+      {({ close }) => (
+        <ConfirmationForm
+          message={
+            <FormattedMessage
+              {...messages.confirmRemove}
+              values={{
+                target: <b>{name}</b>,
+              }}
+            />
+          }
+          isLoading={isPending}
+          error={getErrorMessage(error)}
+          onConfirm={handleConfirm.bind(null, close)}
+          onClose={close}
+          buttonLabel={formatMessage(labels.delete)}
+          buttonVariant="danger"
+        />
+      )}
+    </DialogButton>
   );
 }
