@@ -4,7 +4,11 @@ import { serializeError } from 'serialize-error';
 import { EVENT_TYPE, POSTBACK_STATUS } from '@/lib/constants';
 import { uuid } from '@/lib/crypto';
 import { getClientInfo } from '@/lib/detect';
-import { getAttributionFromClick, matchClickToConversion } from '@/lib/postback/clickMatch';
+import {
+  getAttributionFromClick,
+  getAttributionFromRedirectClick,
+  matchClickToConversion,
+} from '@/lib/postback/clickMatch';
 import { parsePostbackRequest } from '@/lib/postback/parser';
 import { relayToTargets } from '@/lib/postback/relay';
 import { encodeBody, formatRelayPayload } from '@/lib/postback/relayFormatter';
@@ -122,14 +126,23 @@ async function handlePostback(request: Request, params: { slug: string }) {
   // This enables full attribution: know which ad/campaign drove this
   // conversion
   const allData = { ...parsed.query, ...parsed.body };
-  const { clickId, linkClick } = await matchClickToConversion(allData);
+  const { clickId, linkClick, redirectClick } = await matchClickToConversion(allData);
 
-  // Merge attribution data from original click
+  // Merge attribution data from original click (LinkClick or RedirectClick)
   let attributionData: Record<string, unknown> = {};
-  if (linkClick) {
+  if (redirectClick) {
+    // New redirect module click
+    attributionData = getAttributionFromRedirectClick(redirectClick);
+
+    // Update request record with redirect click match
+    await updatePostbackRequest(requestRecord.id, {
+      redirectClickId: redirectClick.id,
+    });
+  } else if (linkClick) {
+    // Legacy link click
     attributionData = getAttributionFromClick(linkClick);
 
-    // Update request record with click match
+    // Update request record with link click match
     await updatePostbackRequest(requestRecord.id, {
       linkClickId: linkClick.id,
     });
@@ -140,7 +153,7 @@ async function handlePostback(request: Request, params: { slug: string }) {
     ...transformedData,
     ...attributionData,
     matchedClickId: clickId,
-    hasAttribution: !!linkClick,
+    hasAttribution: !!(linkClick || redirectClick),
   };
 
   // Extract revenue if configured
@@ -159,7 +172,9 @@ async function handlePostback(request: Request, params: { slug: string }) {
 
   // Use session from original click if available, otherwise generate new
   const sessionId =
-    linkClick?.sessionId || uuid(endpoint.websiteId, clientInfo.ip, clientInfo.userAgent);
+    redirectClick?.sessionId ||
+    linkClick?.sessionId ||
+    uuid(endpoint.websiteId, clientInfo.ip, clientInfo.userAgent);
 
   await saveEvent({
     websiteId: endpoint.websiteId,

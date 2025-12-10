@@ -17,6 +17,7 @@ export const FAVICON_URL = 'https://icons.duckduckgo.com/ip3/{{domain}}.ico';
 export const LINKS_URL = `${globalThis?.location?.origin}/q`;
 export const PIXELS_URL = `${globalThis?.location?.origin}/p`;
 export const POSTBACKS_URL = `${globalThis?.location?.origin}/x`;
+export const REDIRECTS_URL = `${globalThis?.location?.origin}/r`;
 
 export const DEFAULT_LOCALE = 'en-US';
 export const DEFAULT_THEME = 'light';

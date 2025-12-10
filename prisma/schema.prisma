@@ -28,6 +28,7 @@ model User {
   teams     TeamUser[]
   reports   Report[]
   endpoints PostbackEndpoint[]   @relation("endpointUser")
+  redirects Redirect[]           @relation("redirectUser")
 
   @@map("user")
 }
@@ -202,6 +203,7 @@ model Team {
   links     Link[]
   pixels    Pixel[]
   endpoints PostbackEndpoint[]
+  redirects Redirect[]
 
   @@index([accessCode])
   @@map("team")
@@ -362,7 +364,8 @@ model LinkClick {
   convertedAt DateTime? @map("converted_at") @db.Timestamptz(6)
 
   // Relations
-  link Link @relation(fields: [linkId], references: [id])
+  link             Link              @relation(fields: [linkId], references: [id])
+  postbackRequests PostbackRequest[]
 
   @@index([linkId])
   @@index([sessionId])
@@ -390,12 +393,13 @@ model PostbackEndpoint {
   updatedAt         DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  website  Website            @relation(fields: [websiteId], references: [id])
-  user     User?              @relation("endpointUser", fields: [userId], references: [id])
-  team     Team?              @relation(fields: [teamId], references: [id])
-  requests PostbackRequest[]
-  relays   PostbackRelay[]
-  links    Link[]
+  website   Website            @relation(fields: [websiteId], references: [id])
+  user      User?              @relation("endpointUser", fields: [userId], references: [id])
+  team      Team?              @relation(fields: [teamId], references: [id])
+  requests  PostbackRequest[]
+  relays    PostbackRelay[]
+  links     Link[]
+  redirects Redirect[]
 
   @@index([slug])
   @@index([websiteId])
@@ -406,30 +410,36 @@ model PostbackEndpoint {
 }
 
 model PostbackRequest {
-  id            String    @id @unique @map("request_id") @db.Uuid
-  endpointId    String    @map("endpoint_id") @db.Uuid
-  method        String    @db.VarChar(10)
-  path          String    @db.VarChar(500)
-  query         Json?
-  headers       Json?
-  body          Json?
-  bodyRaw       String?   @map("body_raw") @db.Text
-  clientIp      String?   @map("client_ip") @db.VarChar(45)
-  contentType   String?   @map("content_type") @db.VarChar(100)
-  userAgent     String?   @map("user_agent") @db.VarChar(500)
-  parsedFields  Json?     @map("parsed_fields")
-  validation    Json?
-  relayResult   Json?     @map("relay_result")
-  status        String    @default("received") @db.VarChar(20)
-  eventId       String?   @map("event_id") @db.Uuid
-  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  id              String    @id @unique @map("request_id") @db.Uuid
+  endpointId      String    @map("endpoint_id") @db.Uuid
+  method          String    @db.VarChar(10)
+  path            String    @db.VarChar(500)
+  query           Json?
+  headers         Json?
+  body            Json?
+  bodyRaw         String?   @map("body_raw") @db.Text
+  clientIp        String?   @map("client_ip") @db.VarChar(45)
+  contentType     String?   @map("content_type") @db.VarChar(100)
+  userAgent       String?   @map("user_agent") @db.VarChar(500)
+  parsedFields    Json?     @map("parsed_fields")
+  validation      Json?
+  relayResult     Json?     @map("relay_result")
+  status          String    @default("received") @db.VarChar(20)
+  eventId         String?   @map("event_id") @db.Uuid
+  linkClickId     String?   @map("link_click_id") @db.Uuid
+  redirectClickId String?   @map("redirect_click_id") @db.Uuid
+  createdAt       DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  endpoint PostbackEndpoint @relation(fields: [endpointId], references: [id])
+  endpoint      PostbackEndpoint @relation(fields: [endpointId], references: [id])
+  linkClick     LinkClick?       @relation(fields: [linkClickId], references: [id])
+  redirectClick RedirectClick?   @relation(fields: [redirectClickId], references: [id])
 
   @@index([endpointId])
   @@index([createdAt])
   @@index([endpointId, createdAt])
   @@index([status])
+  @@index([linkClickId])
+  @@index([redirectClickId])
   @@map("postback_request")
 }
 
@@ -475,4 +485,97 @@ model PostbackRelayLog {
   @@index([requestId])
   @@index([createdAt])
   @@map("postback_relay_log")
+}
+
+// ============================================================================
+// Redirect Module - For ad click tracking and attribution
+// ============================================================================
+
+model Redirect {
+  id          String    @id @unique @map("redirect_id") @db.Uuid
+  name        String    @db.VarChar(100)
+  slug        String    @unique @db.VarChar(100)
+  targetUrl   String    @map("target_url") @db.VarChar(2000)
+  description String?   @db.VarChar(500)
+  websiteId   String    @map("website_id") @db.Uuid
+  userId      String?   @map("user_id") @db.Uuid
+  teamId      String?   @map("team_id") @db.Uuid
+
+  // Parameter transformation config
+  // If null/empty, all params pass through
+  // If set, only configured params are captured/passed
+  paramConfig Json? @map("param_config")
+
+  // Link to postback endpoint for conversion matching
+  endpointId String? @map("endpoint_id") @db.Uuid
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  user     User?             @relation("redirectUser", fields: [userId], references: [id])
+  team     Team?             @relation(fields: [teamId], references: [id])
+  endpoint PostbackEndpoint? @relation(fields: [endpointId], references: [id])
+  clicks   RedirectClick[]
+
+  @@index([slug])
+  @@index([websiteId])
+  @@index([userId])
+  @@index([teamId])
+  @@index([endpointId])
+  @@index([createdAt])
+  @@map("redirect")
+}
+
+model RedirectClick {
+  id         String  @id @unique @map("click_id") @db.Uuid
+  redirectId String  @map("redirect_id") @db.Uuid
+  sessionId  String? @map("session_id") @db.Uuid
+
+  // Unique click identifier (generated ULID for tracking)
+  clickToken String @unique @map("click_token") @db.VarChar(26)
+
+  // Captured parameters from incoming request
+  capturedParams Json? @map("captured_params")
+
+  // Common ad network identifiers (extracted for quick lookup)
+  externalClickId String? @map("external_click_id") @db.VarChar(255)
+  gclid           String? @db.VarChar(255)
+  fbclid          String? @db.VarChar(255)
+  msclkid         String? @db.VarChar(255)
+  ttclid          String? @db.VarChar(255)
+  twclid          String? @db.VarChar(255)
+
+  // UTM parameters
+  utmSource   String? @map("utm_source") @db.VarChar(255)
+  utmMedium   String? @map("utm_medium") @db.VarChar(255)
+  utmCampaign String? @map("utm_campaign") @db.VarChar(255)
+  utmContent  String? @map("utm_content") @db.VarChar(255)
+  utmTerm     String? @map("utm_term") @db.VarChar(255)
+
+  // Request context
+  referrer  String? @db.VarChar(500)
+  userAgent String? @map("user_agent") @db.VarChar(500)
+  clientIp  String? @map("client_ip") @db.VarChar(45)
+  country   String? @db.Char(2)
+  region    String? @db.VarChar(50)
+  city      String? @db.VarChar(100)
+
+  // Timestamps
+  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  convertedAt DateTime? @map("converted_at") @db.Timestamptz(6)
+
+  redirect         Redirect          @relation(fields: [redirectId], references: [id])
+  postbackRequests PostbackRequest[]
+
+  @@index([redirectId])
+  @@index([sessionId])
+  @@index([clickToken])
+  @@index([externalClickId])
+  @@index([gclid])
+  @@index([fbclid])
+  @@index([createdAt])
+  @@index([redirectId, createdAt])
+  @@map("redirect_click")
 }

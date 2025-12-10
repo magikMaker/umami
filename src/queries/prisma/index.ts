@@ -4,6 +4,7 @@ export * from './linkClick';
 export * from './pixel';
 export * from './postbackRelay';
 export * from './postbackRequest';
+export * from './redirect';
 export * from './report';
 export * from './segment';
 export * from './team';

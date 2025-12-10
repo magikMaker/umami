@@ -7,6 +7,8 @@ export type Config = {
   faviconUrl?: string;
   linksUrl?: string;
   pixelsUrl?: string;
+  postbacksUrl?: string;
+  redirectsUrl?: string;
   privateMode: boolean;
   telemetryDisabled: boolean;
   trackerScriptName?: string;

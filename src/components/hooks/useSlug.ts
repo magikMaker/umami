@@ -1,8 +1,8 @@
 import { useConfig } from '@/components/hooks/useConfig';
-import { LINKS_URL, PIXELS_URL, POSTBACKS_URL } from '@/lib/constants';
+import { LINKS_URL, PIXELS_URL, POSTBACKS_URL, REDIRECTS_URL } from '@/lib/constants';
 
-export function useSlug(type: 'link' | 'pixel' | 'postback') {
-  const { linksUrl, pixelsUrl, postbacksUrl } = useConfig();
+export function useSlug(type: 'link' | 'pixel' | 'postback' | 'redirect') {
+  const { linksUrl, pixelsUrl, postbacksUrl, redirectsUrl } = useConfig();
 
   const getHostUrl = () => {
     switch (type) {
@@ -12,6 +12,8 @@ export function useSlug(type: 'link' | 'pixel' | 'postback') {
         return pixelsUrl || PIXELS_URL;
       case 'postback':
         return postbacksUrl || POSTBACKS_URL;
+      case 'redirect':
+        return redirectsUrl || REDIRECTS_URL;
     }
   };
 
