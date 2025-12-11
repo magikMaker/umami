@@ -1,8 +1,10 @@
-import { DataColumn, DataTable, type DataTableProps, Row } from '@umami/react-zen';
+import { DataColumn, DataTable, type DataTableProps, Icon, Row } from '@umami/react-zen';
 import Link from 'next/link';
 import { DateDistance } from '@/components/common/DateDistance';
 import { ExternalLink } from '@/components/common/ExternalLink';
+import { LinkButton } from '@/components/common/LinkButton';
 import { useMessages, useNavigation, useSlug } from '@/components/hooks';
+import { Eye } from '@/components/icons';
 import { RedirectDeleteButton } from './RedirectDeleteButton';
 import { RedirectEditButton } from './RedirectEditButton';
 
@@ -36,10 +38,15 @@ export function RedirectsTable(props: DataTableProps) {
       <DataColumn id="created" label={formatMessage(labels.created)} width="200px">
         {(row: { createdAt: string }) => <DateDistance date={new Date(row.createdAt)} />}
       </DataColumn>
-      <DataColumn id="action" align="end" width="100px">
+      <DataColumn id="action" align="end" width="140px">
         {({ id, name }: { id: string; name: string }) => {
           return (
             <Row>
+              <LinkButton href={renderUrl(`/redirects/${id}`)} variant="quiet">
+                <Icon>
+                  <Eye />
+                </Icon>
+              </LinkButton>
               <RedirectEditButton redirectId={id} />
               <RedirectDeleteButton redirectId={id} websiteId={websiteId} name={name} />
             </Row>
