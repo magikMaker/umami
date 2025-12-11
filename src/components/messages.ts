@@ -350,6 +350,7 @@ export const labels = defineMessages({
   clear: { id: 'label.clear', defaultMessage: 'Clear' },
   replay: { id: 'label.replay', defaultMessage: 'Replay' },
   copyRaw: { id: 'label.copy-raw', defaultMessage: 'Copy raw' },
+  copyUrl: { id: 'label.copy-url', defaultMessage: 'Copy URL' },
   noRequests: { id: 'label.no-requests', defaultMessage: 'No requests' },
   autoRefresh: { id: 'label.auto-refresh', defaultMessage: 'Auto-refresh' },
   autoRefreshOn: {

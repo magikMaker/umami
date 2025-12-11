@@ -1,6 +1,5 @@
-import { IconLabel, Row } from '@umami/react-zen';
+import { Button, Icon, Row } from '@umami/react-zen';
 import { Badge } from '@/components/common/Badge';
-import { LinkButton } from '@/components/common/LinkButton';
 import { PageHeader } from '@/components/common/PageHeader';
 import { useMessages, usePostback, useSlug } from '@/components/hooks';
 import { Copy, Webhook } from '@/components/icons';
@@ -35,9 +34,12 @@ export function PostbackHeader() {
       }
       icon={<Webhook />}
     >
-      <LinkButton onPress={handleCopy}>
-        <IconLabel icon={<Copy />} label={formatMessage(labels.endpointUrl)} />
-      </LinkButton>
+      <Button variant="quiet" onPress={handleCopy}>
+        <Icon>
+          <Copy />
+        </Icon>
+        {formatMessage(labels.copyUrl)}
+      </Button>
     </PageHeader>
   );
 }

@@ -1,8 +1,10 @@
-import { DataColumn, DataTable, type DataTableProps, Row } from '@umami/react-zen';
+import { DataColumn, DataTable, type DataTableProps, Icon, Row } from '@umami/react-zen';
 import Link from 'next/link';
 import { DateDistance } from '@/components/common/DateDistance';
 import { ExternalLink } from '@/components/common/ExternalLink';
+import { LinkButton } from '@/components/common/LinkButton';
 import { useMessages, useNavigation, useSlug } from '@/components/hooks';
+import { Eye } from '@/components/icons';
 import { PostbackDeleteButton } from './PostbackDeleteButton';
 import { PostbackEditButton } from './PostbackEditButton';
 
@@ -35,12 +37,17 @@ export function PostbacksTable(props: DataTableProps) {
       <DataColumn id="created" label={formatMessage(labels.created)}>
         {(row: { createdAt: string }) => <DateDistance date={new Date(row.createdAt)} />}
       </DataColumn>
-      <DataColumn id="action" align="end" width="100px">
+      <DataColumn id="action" align="end" width="140px">
         {(row: { id: string; name: string }) => {
           const { id, name } = row;
 
           return (
             <Row>
+              <LinkButton href={renderUrl(`/postbacks/${id}`)} variant="quiet">
+                <Icon>
+                  <Eye />
+                </Icon>
+              </LinkButton>
               <PostbackEditButton postbackId={id} />
               <PostbackDeleteButton postbackId={id} name={name} />
             </Row>
